@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fly Room</title>
+    <meta http-equiv="refresh" content="300" />
+    <meta name="viewport" content="width=device-width">
+    <!-- EXTERNAL LIBS-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://www.google.com/jsapi"></script>
+
+    <!-- EXAMPLE SCRIPT -->
+    <script>
+
+      // onload callback
+      function drawChart() {
+
+        var cloud_url = 'https://data.sparkfun.com/output/';
+        // Public Key from https://data.sparkfun.com
+        var public_key = '7J4jgzDaRvI0YjQNjmVm';
+
+        // JSONP request
+        var jsonData = $.ajax({
+          url:  cloud_url + public_key + '.json',
+          //data: {page: 1},
+          data: {
+          		'gte':{
+          				'timestamp': 'now - 96 hours'
+          				}
+          		},
+          dataType: 'jsonp',
+        }).done(function (results) {
+          var latest = results[0];
+          var gauge = new google.visualization.Gauge(document.getElementById('gauge'));
+          var gaugeData = google.visualization.arrayToDataTable([
+            ['Label', 'Value'],
+            ['Temp', 0],
+            ['Humedad', 0],
+            ['S. Term.', 0]
+          ]);
+          var options = {
+            width: 600,
+            redFrom: 50, redTo: 100,
+            yellowFrom:30, yellowTo: 50,
+            greenFrom:20, greenTo: 30,
+            minorTicks: 5
+          };
+
+          // For animation purpose only
+          gauge.draw(gaugeData,options);
+
+          // Show real data
+          gaugeData.setValue(0,1,parseFloat(latest.temp));
+          gaugeData.setValue(1,1,parseFloat(latest.hum));
+          gaugeData.setValue(2,1,parseFloat(latest.hidx));
+
+          gauge.draw(gaugeData,options);
+          
+       //Grafico lineas   
+
+          var data = new google.visualization.DataTable();
+
+          data.addColumn('datetime', 'Tiempo');
+          data.addColumn('number', 'Humedad');
+          data.addColumn('number', 'Temperatura');
+          
+          //data.addColumn('number', 'Sensacion Termica');
+
+          $.each(results, function (i, row) {
+            data.addRow([
+              (new Date(row.timestamp)), 
+              parseFloat(row.hum),
+              parseFloat(row.temp),
+              
+           //   parseFloat(row.hidx)
+            ]);
+          });
+
+          var matOptions = {
+          	chart: {
+          		title: ' '
+          },
+          width: 1200,
+          height: 300,
+          //vAxis.viewWindow.max: 40,
+          //vAxis.viewWindow.min: 15,
+          series: {
+          	1:{axis: 'Temp'},
+          	0:{axis: 'Hum'}
+          	},
+          	vAxis: {
+          		y: {
+          			Temp: {label: 'Temp (Celcius)'},
+          			Hum: {label: 'Humedad (%)'}
+          			},
+          		viewWindow: {
+          			min:0,
+          			max: 70
+          			}	
+          		}
+          	};
+          //var n= data.getNumberOfRows();
+          var a= data.getValue(0,0);
+      	  document.getElementById("x").innerHTML = a;
+          var chart = new google.charts.Line(document.getElementById('temperature'));
+          chart.draw(data, google.charts.Line.convertOptions(matOptions));
+
+        });
+      }
+
+      // load chart lib
+      google.load('visualization', '1', {
+        packages: ['line','gauge']
+      });
+
+      // call drawChart once google charts is loaded
+      google.setOnLoadCallback(drawChart);
+    </script>
+    <style>
+		img {
+   			 max-width: 100%;
+			}
+</style>
+  </head>
+  <body style="text-align:center">
+    <h2>Fly Room</h2>
+    <p id="x"></p>
+    <div id="gauge" width: 90%; align="center"></div>
+    <div id="temperature"; align="center"></div>
+  </body>
+</html>
